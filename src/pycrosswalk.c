@@ -247,6 +247,16 @@ static void xw_handle_shutdown(XW_Extension extension) {
 
 static int load_python_extension(XW_Extension extension,
                                   XW_GetInterface get_interface) {
+  char* custom_module_search_path = NULL;
+  char* custom_module_name = NULL;
+
+  char* custom_module = getenv("PYXWALK_MODULE");
+  if (custom_module) {
+    custom_module_name = basename(custom_module);
+    custom_module_name[strlen(custom_module_name) - 3] = '\0';
+    custom_module_search_path = dirname(custom_module);
+  }
+
   const XW_Internal_RuntimeInterface* runtime =
       get_interface(XW_INTERNAL_RUNTIME_INTERFACE);
 
@@ -272,12 +282,22 @@ static int load_python_extension(XW_Extension extension,
   module_name[extension_plugin_name_size - 6] = '\0';
 
   PyObject* search_path_list = PySys_GetObject("path");
-  PyObject* search_path_object = PyUnicode_FromString(dirname(extension_path));
+  PyObject* search_path_object;
+
+  if (custom_module_search_path)
+    search_path_object = PyUnicode_FromString(custom_module_search_path);
+  else
+    search_path_object = PyUnicode_FromString(dirname(extension_path));
 
   PyList_Append(search_path_list, search_path_object);
   Py_DECREF(search_path_object);
 
-  PyObject* module = PyImport_ImportModule(module_name);
+  PyObject* module;
+  if (custom_module_name)
+    module = PyImport_ImportModule(custom_module_name);
+  else
+    module = PyImport_ImportModule(module_name);
+
   if (!module) {
     PyErr_Print();
     return 0;
