@@ -28,10 +28,19 @@ def HandleSyncMessage(instance, message):
   return "Hello from python: %d %s %s" % (instance, message, now)
 
 
+def HandleInstanceCreated(instance):
+  xwalk.SetMessageCallback(instance, HandleMessage)
+  xwalk.SetSyncMessageCallback(instance, HandleSyncMessage)
+
+
+def HandleInstanceDestroyed(instance):
+  return
+
+
 def Main():
   xwalk.SetExtensionName("example")
-  xwalk.SetMessageCallback(HandleMessage)
-  xwalk.SetSyncMessageCallback(HandleSyncMessage)
+  xwalk.SetInstanceCreatedCallback(HandleInstanceCreated)
+  xwalk.SetInstanceDestroyedCallback(HandleInstanceDestroyed)
   xwalk.SetJavaScriptAPI(
     "var listener = null;"
     "extension.setMessageListener(function(msg) {"
